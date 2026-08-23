@@ -87,20 +87,32 @@ if "vector_manager" not in st.session_state:
 with st.sidebar:
     st.header("⚙️ Configuration")
     
-    # API Key Input
-    saved_key = RAGConfig.get_api_key()
-    api_key_input = st.text_input(
-        "OpenRouter API Key",
-        value=saved_key,
-        type="password",
-        help="Enter your OpenRouter API Key (starts with sk-or-...). Get one at https://openrouter.ai/keys",
-        placeholder="sk-or-v1-..."
-    )
+    # API Key Configuration (Securely handled - server secrets are never exposed in UI)
+    server_configured_key = RAGConfig.get_api_key()
     
-    if not api_key_input:
-        st.warning("⚠️ OpenRouter API Key is required to run embeddings and queries.")
+    if server_configured_key:
+        st.success("🔒 System API Key Active (Secure)")
+        custom_key = st.text_input(
+            "Custom API Key (Optional)",
+            value="",
+            type="password",
+            help="A secure API key is already configured on the server. Enter your own OpenRouter key only if you want to override it.",
+            placeholder="sk-or-v1-... (optional override)"
+        )
+        effective_api_key = custom_key.strip() if custom_key.strip() else server_configured_key
     else:
-        st.success("✅ API Key configured")
+        custom_key = st.text_input(
+            "OpenRouter API Key",
+            value="",
+            type="password",
+            help="Enter your OpenRouter API Key (starts with sk-or-...). Get one at https://openrouter.ai/keys",
+            placeholder="sk-or-v1-..."
+        )
+        effective_api_key = custom_key.strip()
+        if not effective_api_key:
+            st.warning("⚠️ OpenRouter API Key is required to run embeddings and queries.")
+        else:
+            st.success("✅ API Key configured")
 
     st.markdown("---")
     st.subheader("🤖 Model Selection")
@@ -153,7 +165,7 @@ with st.sidebar:
     st.markdown("---")
     st.subheader("📚 FAISS Knowledge Base")
     
-    stats = st.session_state.vector_manager.get_stats(api_key=api_key_input)
+    stats = st.session_state.vector_manager.get_stats(api_key=effective_api_key)
     if stats["exists"]:
         st.markdown(f"<span class='stat-badge'>📊 Indexed Chunks: {stats['total_vectors']}</span>", unsafe_allow_html=True)
         if stats["sources"]:
@@ -197,7 +209,7 @@ with st.expander("📤 **Upload & Index Documents**", expanded=not st.session_st
             st.markdown(f"- 📎 `{f.name}` ({round(f.size / 1024, 1)} KB)")
 
         if st.button("🚀 Process & Index to FAISS", type="primary", use_container_width=True):
-            if not api_key_input:
+            if not effective_api_key:
                 st.error("Please enter your OpenRouter API Key in the sidebar first!")
             else:
                 progress_bar = st.progress(0)
@@ -219,7 +231,7 @@ with st.expander("📤 **Upload & Index Documents**", expanded=not st.session_st
                 try:
                     num_docs, num_chunks = st.session_state.vector_manager.add_documents_to_index(
                         docs=all_docs,
-                        api_key=api_key_input,
+                        api_key=effective_api_key,
                         embedding_model=selected_embedding_model
                     )
                     progress_bar.progress(100)
@@ -259,7 +271,7 @@ for msg in st.session_state.messages:
 prompt = st.chat_input("Ask a question about your uploaded documents...")
 
 if prompt:
-    if not api_key_input:
+    if not effective_api_key:
         st.error("Please enter your OpenRouter API Key in the sidebar before querying!")
     elif not st.session_state.vector_manager.index_exists():
         st.warning("Please upload and index at least one document first!")
@@ -273,7 +285,7 @@ if prompt:
         with st.chat_message("assistant"):
             with st.spinner("🤖 Executing LangGraph workflow (Retrieve -> Grade -> Generate)..."):
                 pipeline = RAGPipeline(
-                    api_key=api_key_input,
+                    api_key=effective_api_key,
                     model_name=selected_model,
                     embedding_model=selected_embedding_model,
                     top_k=top_k
