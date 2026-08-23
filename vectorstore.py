@@ -37,7 +37,7 @@ def get_embeddings(
         model=resolved_model,
         check_embedding_ctx_length=False,
         default_headers={
-            "HTTP-Referer": "https://localhost:8501",
+            "HTTP-Referer": "https://openrouter.ai",
             "X-Title": "LangGraph RAG Assistant"
         }
     )

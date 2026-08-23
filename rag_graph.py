@@ -43,7 +43,7 @@ def get_chat_model(
         temperature=temperature,
         streaming=streaming,
         default_headers={
-            "HTTP-Referer": "https://localhost:8501",
+            "HTTP-Referer": "https://openrouter.ai",
             "X-Title": "LangGraph RAG Assistant"
         }
     )

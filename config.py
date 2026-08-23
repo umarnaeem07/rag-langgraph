@@ -6,6 +6,16 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+def _clean_api_key(key: str) -> str:
+    """Cleans API key by stripping quotes, whitespace, and potential 'Bearer ' prefix."""
+    if not key:
+        return ""
+    cleaned = str(key).strip().strip("\"'").strip()
+    if cleaned.lower().startswith("bearer "):
+        cleaned = cleaned[7:].strip().strip("\"'").strip()
+    return cleaned
+
+
 def _get_val(env_key: str, default: str = "") -> str:
     """Helper to get a configuration value from os.environ or streamlit secrets."""
     # 1. Check OS environment variable
@@ -39,8 +49,8 @@ class RAGConfig:
     def get_api_key(override_key: Optional[str] = None) -> str:
         """Returns the OpenRouter API key from explicit argument, environment, or Streamlit secrets."""
         if override_key and override_key.strip():
-            return override_key.strip().strip("\"'")
-        return _get_val("OPENROUTER_API_KEY", "")
+            return _clean_api_key(override_key)
+        return _clean_api_key(_get_val("OPENROUTER_API_KEY", ""))
 
     @staticmethod
     def get_base_url() -> str:
