@@ -1,0 +1,28 @@
+# Environment variables & secrets
+.env
+*.env
+.env.*
+.env.example
+.env.local
+
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environment
+venv/
+.venv/
+env/
+ENV/
+
+# FAISS vector index & local embeddings cache
+faiss_index/
+*.faiss
+*.pkl
+
+# IDE & OS files
+.DS_Store
+Thumbs.db
+.idea/
